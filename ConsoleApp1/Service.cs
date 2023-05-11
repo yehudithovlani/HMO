@@ -7,19 +7,30 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp1
 {
-    public class Service
+     public class Service
     {
         //עידכון שם
         public bool ChangeName(string pid, string name)
         {
-            // בגלל שאוביקט גדול מאוד עדיף להרוס אותו כמה שיותר מהר ולכן עושים כך: 
-            using (MyDb mydb = new MyDb())
+            try
             {
-                var seartch = mydb.Patients.ToList().Find(x => x.PersonId == pid) ?? throw new Exception("מוצר לא תקין");
+                // בגלל שהאוביקט גדול מאוד עדיף להרוס אותו כמה שיותר מהר ולכן עושים כך: 
+                using (MyDb mydb = new MyDb())
+                {
+                    var seartch = mydb.Patients.ToList().Find(x => x.PersonId == pid) ?? throw new Exception("מוצר לא תקין");
 
-                seartch.FirstName = name;
-                mydb.SaveChanges(); // עדכון נתונים בדטה בייס
-                return true;
+                    seartch.FirstName = name;
+                    mydb.SaveChanges(); // עדכון נתונים בדטה בייס
+                    return true;
+                }
+
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+
             }
 
 
@@ -33,7 +44,7 @@ namespace ConsoleApp1
             try
             {
                 if (patient == null) throw new ArgumentNullException("No normal patient was entered");
-                if (patient.PersonId.Length == 9 ) throw new Exception("Invalid ID number");
+                if (patient.PersonId.Length == 9) throw new Exception("Invalid ID number");
                 if (patient.FirstName.Length < 2) throw new Exception("Invalid first name");
                 if (patient.LastName.Length < 2) throw new Exception("Invalid last name");
                 if (patient.DateOfBirth > currentTime) throw new Exception("Invalid date");//לבדוק שכך משווים בין תאריך
@@ -55,79 +66,119 @@ namespace ConsoleApp1
                 }
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return false;
 
             }
-           
+
         }
         //החזרת רשימת כל הפציינטים בקופת החולים
         public async Task<List<Patient>> GetAll()
         {
             MyDb mydb = new MyDb();
-
-            var patient = mydb.Patients.ToList<Patient>();
-
-            return patient;
-        }
-        //החזרת פציינט נבחר
-        //מי תופס את השגיאה
-        public async Task<Patient> GetById(string id)
-        {
-            if (id.Length < 8) throw new Exception("Invalid ID number");
-            else
+            try
             {
-                MyDb mydb = new MyDb();
-
-                var patient = mydb.Patients.ToList().Find(p => p.PersonId == id) ?? throw new Exception("There is no patient with this ID");
-
+                var patient = mydb.Patients.ToList<Patient>();
                 return patient;
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<Patient>();
+            }
+
+
+
+        }
+        //החזרת פציינט נבחר
+        public async Task<Patient> GetById(string id)
+        {
+            try
+            {
+                if (id.Length != 9) throw new Exception("Invalid ID number");
+                else
+                {
+                    MyDb mydb = new MyDb();
+
+                    var patient = mydb.Patients.ToList().Find(p => p.PersonId == id) ?? throw new Exception("There is no patient with this ID");
+
+                    return patient;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new Patient();
+            }
+
         }
         // הוספת פציינט שהיה או עכשיו חולה
         public bool CreateSick(SickPatient sickpatient)
         {
             DateTime currentTime = DateTime.Now;
-            DateTime future  = sickpatient.PositiveResult.Value.AddDays(14);
-            if (sickpatient == null) throw new ArgumentNullException("No normal patient was entered");
-            if (sickpatient.PersonId.Length < 8) throw new Exception("Invalid ID number");
-            if (sickpatient.PositiveResult > currentTime) throw new Exception("Invalid date");
-            if (sickpatient.Recuperation < future) throw new Exception("Invalid date");//לבדוק שכך משווים בין תאריך
-            else
+            try
             {
-                MyDb mydb = new MyDb();
+                DateTime future = sickpatient.PositiveResult.Value.AddDays(14);
+                if (sickpatient == null) throw new ArgumentNullException("No normal patient was entered");
+                if (sickpatient.PersonId.Length < 8) throw new Exception("Invalid ID number");
+                if (sickpatient.PositiveResult > currentTime) throw new Exception("Invalid date");
+                if (sickpatient.Recuperation < future) throw new Exception("Invalid date");//לבדוק שכך משווים בין תאריך
+                else
+                {
+                    MyDb mydb = new MyDb();
 
-                mydb.SickPatients.Add(sickpatient);
+                    mydb.SickPatients.Add(sickpatient);
 
-                int x = mydb.SaveChanges();
+                    int x = mydb.SaveChanges();
 
-                return (x == 0) ? false : true;
+                    return (x == 0) ? false : true;
 
+                }
             }
-
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
         }
 
-        //הצגת כל מי שהיה החולים בקורונה
+        //הצגת כל מי שהיה חולה בקורונה
         public async Task<List<SickPatient>> GetAllSick()
         {
             MyDb mydb = new MyDb();
+            try
+            {
+                var sickpatients = mydb.SickPatients.ToList<SickPatient>();
+                return sickpatients;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<SickPatient>();
+            }
 
-            var sickpatients = mydb.SickPatients.ToList<SickPatient>();
-            return sickpatients;
         }
         //הצגת מי שהיה חולה ספציפי
         public async Task<SickPatient> GetOneSick(string id)
         {
-            if (id.Length < 8) throw new Exception("Invalid ID number");
-            else
+            try
             {
-                MyDb mydb = new MyDb();
+                if (id.Length != 9) throw new Exception("Invalid ID number");
+                else
+                {
+                    MyDb mydb = new MyDb();
 
-                var sickpatient = mydb.SickPatients.ToList().Find(p => p.PersonId == id) ?? throw new Exception("There is no sick patient with this ID ");
+                    var sickpatient = mydb.SickPatients.ToList().Find(p => p.PersonId == id) ?? throw new Exception("There is no sick patient with this ID ");
 
-                return sickpatient;
+                    return sickpatient;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new SickPatient();
             }
 
         }
@@ -135,53 +186,86 @@ namespace ConsoleApp1
         public bool CreateSickDetails(CoronaDetail sickpatientDetails)
         {
             DateTime currentTime = DateTime.Now;
-            if (sickpatientDetails == null) throw new ArgumentNullException("No normal patient and details was entered");
-            if (sickpatientDetails.PersonId.Length < 8) throw new Exception("Invalid ID number");
-            if (sickpatientDetails.GettingVaccinated1 > currentTime) throw new Exception("Invalid name of Vaccine Manu facturer");
-            if (sickpatientDetails.VaccineManufacturer1.Length<2) throw new Exception("Invalid name of Vaccine Manu facturer");
-            else
+            try
             {
-                MyDb mydb = new MyDb();
+                if (sickpatientDetails == null) throw new ArgumentNullException("No normal patient and details was entered");
+                if (sickpatientDetails.PersonId.Length < 8) throw new Exception("Invalid ID number");
+                if (sickpatientDetails.GettingVaccinated1 > currentTime) throw new Exception("Invalid name of Vaccine Manu facturer");
+                if (sickpatientDetails.VaccineManufacturer1.Length<2) throw new Exception("Invalid name of Vaccine Manu facturer");
+                else
+                {
+                    MyDb mydb = new MyDb();
 
-                mydb.CoronaDetails.Add(sickpatientDetails);
+                    mydb.CoronaDetails.Add(sickpatientDetails);
 
-                int x = mydb.SaveChanges();
+                    int x = mydb.SaveChanges();
 
-                return (x == 0) ? false : true;
+                    return (x == 0) ? false : true;
+                }
             }
-
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
         }
         //הצגת כל פירטי קורונה של כל הפציינטים
         public async Task<List<CoronaDetail>> GetAllDetails()
         {
             MyDb mydb = new MyDb();
-
-            var patientDetailsk = mydb.CoronaDetails.ToList<CoronaDetail>();
-            return patientDetailsk;
-        }
-      // הצגת פרטי קורנה של פציינט ספציפי
-             public async Task<CoronaDetail> GetOneDetails(string id)
-        {
-            if (id.Length < 8) throw new Exception("Invalid ID number");
-            else
+            try
             {
-                MyDb mydb = new MyDb();
-
-                var patientDetailsk = mydb.CoronaDetails.ToList().Find(p => p.PersonId == id) ?? throw new Exception("There is no details of patient with this ID");
-
+                var patientDetailsk = mydb.CoronaDetails.ToList<CoronaDetail>();
                 return patientDetailsk;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<CoronaDetail>();
             }
 
         }
+        // הצגת פרטי קורנה של פציינט ספציפי
+        public async Task<CoronaDetail> GetOneDetails(string id)
+        {
+            try
+            {
+                if (id.Length != 9) throw new Exception("Invalid ID number");
+                else
+                {
+                    MyDb mydb = new MyDb();
+
+                    var patientDetailsk = mydb.CoronaDetails.ToList().Find(p => p.PersonId == id) ?? throw new Exception("There is no details of patient with this ID");
+
+                    return patientDetailsk;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new CoronaDetail();
+            }
+
+
+        }
         //שלפית רשימת כל החולים עכשיו
-        //שגיאה
-        //public async Task<List<SickPatient>> GetAllSickNow()
-        //{
-        //    DateTime currentTime = DateTime.Now;
-        //    MyDb mydb = new MyDb();
-        //    var sickpatientsNoe = mydb.SickPatients.ToList().Find(p => p.Recuperation.Value > currentTime)();
-        //    return sickpatientsNoe;
-        //}
+        public async Task<List<SickPatient>> GetAllSickNow()
+        {
+            try
+            {
+                DateTime currentTime = DateTime.Now;
+                MyDb mydb = new MyDb();
+                var sickPatientsNow = mydb.SickPatients.ToList().FindAll(p => p.Recuperation.Value > currentTime)?? throw new Exception("There are no sick patients now "); ;
+                return sickPatientsNow;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<SickPatient>();
+            }
+
+
+        }
 
     }
 }

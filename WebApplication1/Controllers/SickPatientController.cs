@@ -17,6 +17,14 @@ namespace WebApplication1.Controllers
             Service s = new Service();
             return s.GetAllSick();
         }
+        //החזרת כל הפציינטים שעכשיו חולים
+        [HttpGet("sick-patients")]
+        public Task<List<SickPatient>> GetAllSickNow()
+        {
+            Service s = new Service();
+            return s.GetAllSickNow();
+        }
+
         //החזרת פציינט שהיה / עשיו חולה ספציפי
         [HttpGet("{id}")]
         public Task<SickPatient> GetOneSick(string id)
